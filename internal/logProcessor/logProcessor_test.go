@@ -64,3 +64,36 @@ func TestParseLine(t *testing.T) {
 		t.Errorf("ParseLine() err = %v, want = errors.Is(err, ParseErr)", err)
 	}
 }
+
+func TestProcessLogs(t *testing.T) {
+	filePath := "test.log"
+	analyzer, err := NewAnalyzer(time.Minute)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = ProcessLogs(filePath, analyzer)
+	if err != nil {
+		t.Error(err)
+	}
+
+	want := Analyzer{
+		validEntries:     2,
+		malformedEntries: 1,
+		countsBySeverityLevels: map[SeverityLevel]int{
+			INFO:  1,
+			FATAL: 1,
+		},
+		countsByServices: map[string]int{
+			"payment-service": 1,
+			"user-service":    1,
+		},
+		timeSlices: time.Minute,
+	}
+
+	got := *analyzer
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ProcessLogs() = %+v, want = %+v", got, want)
+	}
+}

@@ -2,29 +2,12 @@ package logprocessor
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"slices"
 	"strings"
 	"time"
 )
-
-type SeverityLevel int
-
-const (
-	INFO SeverityLevel = iota
-	WARN
-	ERROR
-	FATAL
-)
-
-var severityLevels = []string{"INFO", "WARN", "ERROR", "FATAL"}
-
-type LogEntry struct {
-	timestamp time.Time
-	severity  SeverityLevel
-	service   string
-	message   string
-}
 
 // Read file line by line and call lineHandler on each line
 func ReadLine(file *os.File, lineHandler func(string) error) error {
@@ -67,4 +50,24 @@ func ParseLine(line string) (LogEntry, error) {
 	}
 
 	return logEntry, nil
+}
+
+func ProcessLogs(filePath string, analyzer *Analyzer) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return ReadLine(file, func(line string) error {
+		logEntry, err := ParseLine(line)
+		isMalformed := false
+		if errors.Is(err, ParseErr) {
+			isMalformed = true
+		} else if err != nil {
+			return err
+		}
+
+		return analyzer.RecordLog(logEntry, isMalformed)
+	})
 }
