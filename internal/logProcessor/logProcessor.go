@@ -3,7 +3,24 @@ package logprocessor
 import (
 	"bufio"
 	"os"
+	"time"
 )
+
+type SeverityLevel int
+
+const (
+	INFO SeverityLevel = iota
+	WARN
+	ERROR
+	FATAL
+)
+
+type LogEntry struct {
+	timestamp time.Time
+	severity  SeverityLevel
+	service   string
+	message   string
+}
 
 // Read file line by line and call lineHandler on each line
 func ReadLine(file *os.File, lineHandler func(string) error) error {
@@ -17,4 +34,8 @@ func ReadLine(file *os.File, lineHandler func(string) error) error {
 	}
 
 	return scanner.Err()
+}
+
+func ParseLine(line string) (LogEntry, error) {
+	return LogEntry{}, nil
 }
