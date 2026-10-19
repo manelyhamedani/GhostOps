@@ -3,6 +3,8 @@ package logprocessor
 import (
 	"bufio"
 	"os"
+	"slices"
+	"strings"
 	"time"
 )
 
@@ -14,6 +16,8 @@ const (
 	ERROR
 	FATAL
 )
+
+var severityLevels = []string{"INFO", "WARN", "ERROR", "FATAL"}
 
 type LogEntry struct {
 	timestamp time.Time
@@ -36,6 +40,31 @@ func ReadLine(file *os.File, lineHandler func(string) error) error {
 	return scanner.Err()
 }
 
+// Parse each line to log entry with format: timestamp severityLevel serviceName message
+// timestamp is RFC3339
+// severityLevel is in {INFO, WARN, ERROR, FATAL}
 func ParseLine(line string) (LogEntry, error) {
-	return LogEntry{}, nil
+	parts := strings.SplitN(line, " ", 4)
+	if len(parts) != 4 {
+		return LogEntry{}, ParseErr
+	}
+
+	ts, err := time.Parse(time.RFC3339, parts[0])
+	if err != nil {
+		return LogEntry{}, ParseErr
+	}
+
+	sv := slices.Index(severityLevels, parts[1])
+	if sv == -1 {
+		return LogEntry{}, ParseErr
+	}
+
+	logEntry := LogEntry{
+		timestamp: ts,
+		severity:  SeverityLevel(sv),
+		service:   parts[2],
+		message:   parts[3],
+	}
+
+	return logEntry, nil
 }

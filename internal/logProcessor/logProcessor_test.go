@@ -1,9 +1,11 @@
 package logprocessor
 
 import (
+	"errors"
 	"os"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestReadLine(t *testing.T) {
@@ -32,5 +34,33 @@ func TestReadLine(t *testing.T) {
 
 	if !reflect.DeepEqual(want, got) {
 		t.Errorf("ReadLine() = %q, want = %q", got, want)
+	}
+}
+
+func TestParseLine(t *testing.T) {
+	validLine := "2026-10-01T00:26:06Z INFO payment-service User successfully logged in"
+	invalidLine := "--- LOG ENTRY START --- [incomplete]"
+
+	got, err := ParseLine(validLine)
+	if err != nil {
+		t.Error(err)
+	}
+	ts, err := time.Parse(time.RFC3339, "2026-10-01T00:26:06Z")
+	if err != nil {
+		t.Error(err)
+	}
+	want := LogEntry{
+		timestamp: ts,
+		severity:  INFO,
+		service:   "payment-service",
+		message:   "User successfully logged in",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ParseLine() = %+v, want = %+v", got, want)
+	}
+
+	got, err = ParseLine(invalidLine)
+	if !errors.Is(err, ParseErr) {
+		t.Errorf("ParseLine() err = %v, want = errors.Is(err, ParseErr)", err)
 	}
 }
