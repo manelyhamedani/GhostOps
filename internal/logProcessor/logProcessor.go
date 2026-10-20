@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"errors"
 	"os"
-	"slices"
 	"strings"
 	"time"
+
+	"github.com/manelyhamedani/GhostOps/internal/model"
 )
 
 // Read file line by line and call lineHandler on each line
@@ -26,27 +27,27 @@ func ReadLine(file *os.File, lineHandler func(string) error) error {
 // Parse each line to log entry with format: timestamp severityLevel serviceName message
 // timestamp is RFC3339
 // severityLevel is in {INFO, WARN, ERROR, FATAL}
-func ParseLine(line string) (LogEntry, error) {
+func ParseLine(line string) (model.LogEntry, error) {
 	parts := strings.SplitN(line, " ", 4)
 	if len(parts) != 4 {
-		return LogEntry{}, ParseErr
+		return model.LogEntry{}, ParseErr
 	}
 
 	ts, err := time.Parse(time.RFC3339, parts[0])
 	if err != nil {
-		return LogEntry{}, ParseErr
+		return model.LogEntry{}, ParseErr
 	}
 
-	sv := slices.Index(severityLevels, parts[1])
-	if sv == -1 {
-		return LogEntry{}, ParseErr
+	sv, ok := model.SeverityLevelsByName[parts[1]]
+	if !ok {
+		return model.LogEntry{}, ParseErr
 	}
 
-	logEntry := LogEntry{
-		timestamp: ts,
-		severity:  SeverityLevel(sv),
-		service:   parts[2],
-		message:   parts[3],
+	logEntry := model.LogEntry{
+		Timestamp: ts,
+		Severity:  model.SeverityLevel(sv),
+		Service:   parts[2],
+		Message:   parts[3],
 	}
 
 	return logEntry, nil

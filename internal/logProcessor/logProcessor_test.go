@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/manelyhamedani/GhostOps/internal/model"
 )
 
 func TestReadLine(t *testing.T) {
@@ -49,11 +51,12 @@ func TestParseLine(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	want := LogEntry{
-		timestamp: ts,
-		severity:  INFO,
-		service:   "payment-service",
-		message:   "User successfully logged in",
+
+	want := model.LogEntry{
+		Timestamp: ts,
+		Severity:  model.INFO,
+		Service:   "payment-service",
+		Message:   "User successfully logged in",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("ParseLine() = %+v, want = %+v", got, want)
@@ -80,9 +83,9 @@ func TestProcessLogs(t *testing.T) {
 	want := Analyzer{
 		validEntries:     2,
 		malformedEntries: 1,
-		countsBySeverityLevels: map[SeverityLevel]int{
-			INFO:  1,
-			FATAL: 1,
+		countsBySeverityLevels: map[model.SeverityLevel]int{
+			model.INFO:  1,
+			model.FATAL: 1,
 		},
 		countsByServices: map[string]int{
 			"payment-service": 1,

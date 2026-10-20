@@ -1,0 +1,65 @@
+{
+    "timeSlice": "1m",
+    "rules": [
+        {
+            "name": "FATAL_EVENT",
+            "severity": ["FATAL"],
+            "threshold": 1,
+            "keywords": []
+        },
+        {
+            "name": "ERROR_SPIKE",
+            "severity": ["ERROR"],
+            "threshold": 5,
+            "keywords": []
+        },
+        {
+            "name": "WARNING_SPIKE",
+            "severity": ["WARN"],
+            "threshold": 10,
+            "keywords": []
+        },
+        {
+           "name": "DATABASE_CONNECTION_FAILURE",
+           "severity": ["ERROR", "FATAL"],
+           "threshold": 1,
+           "keywords": ["database", "connection"]
+        },
+        {
+            "name": "SQL_ERROR",
+            "severity": ["ERROR", "FATAL"],
+            "threshold": 1,
+            "keywords": ["sql", "syntax", "query"]
+        },
+        {
+            "name": "PAYMENT_GATEWAY_FAILURE",
+            "severity": ["ERROR", "FATAL"],
+            "threshold": 1,
+            "keywords": ["payment", "gateway", "transaction"]
+        },
+        {
+            "name": "APPLICATION_EXCEPTION",
+            "severity": ["ERROR", "FATAL"],
+            "threshold": 1,
+            "keywords": ["exception", "panic", "crash", "nullpointer"]
+        },
+        {
+            "name": "HIGH_MEMORY_USAGE",
+            "severity": ["WARN", "ERROR", "FATAL"],
+            "threshold": 1,
+            "keywords": ["memory", "heap", "oom"]
+        },
+        {
+            "name": "RATE_LIMIT_WARNING",
+            "severity": ["WARN", "ERROR", "FATAL"],
+            "threshold": 1,
+            "keywords": ["rate", "limit"]
+        },
+        {
+            "name": "DEPRECATED_API_USAGE",
+            "severity": ["WARN", "ERROR", "FATAL"],
+            "threshold": 1,
+            "keywords": ["deprecated", "legacy"]
+        }
+    ]
+}

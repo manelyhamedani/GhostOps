@@ -3,6 +3,8 @@ package logprocessor
 import (
 	"testing"
 	"time"
+
+	"github.com/manelyhamedani/GhostOps/internal/model"
 )
 
 func TestRecordLog(t *testing.T) {
@@ -14,11 +16,12 @@ func TestRecordLog(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	le := LogEntry{
-		timestamp: ts,
-		severity:  INFO,
-		service:   "payment-service",
-		message:   "User successfully logged in",
+
+	le := model.LogEntry{
+		Timestamp: ts,
+		Severity:  model.INFO,
+		Service:   "payment-service",
+		Message:   "User successfully logged in",
 	}
 	err = a.RecordLog(le, false)
 	if err != nil {
@@ -33,7 +36,7 @@ func TestRecordLog(t *testing.T) {
 	if a.countsByServices["payment-service"] != 1 {
 		t.Errorf("service")
 	}
-	if a.countsBySeverityLevels[INFO] != 1 {
+	if a.countsBySeverityLevels[model.INFO] != 1 {
 		t.Errorf("severity")
 	}
 }

@@ -1,11 +1,15 @@
 package logprocessor
 
-import "time"
+import (
+	"time"
+
+	"github.com/manelyhamedani/GhostOps/internal/model"
+)
 
 type Analyzer struct {
 	validEntries           int
 	malformedEntries       int
-	countsBySeverityLevels map[SeverityLevel]int
+	countsBySeverityLevels map[model.SeverityLevel]int
 	countsByServices       map[string]int
 	timeSlices             time.Duration
 	//TODO: Add incident rules analytics
@@ -13,20 +17,21 @@ type Analyzer struct {
 
 func NewAnalyzer(timeSlices time.Duration) (*Analyzer, error) {
 	a := &Analyzer{
-		countsBySeverityLevels: make(map[SeverityLevel]int),
+		countsBySeverityLevels: make(map[model.SeverityLevel]int),
 		countsByServices:       make(map[string]int),
 		timeSlices:             timeSlices,
 	}
+
 	return a, nil
 }
 
-func (a *Analyzer) RecordLog(logEntry LogEntry, isMalformed bool) error {
+func (a *Analyzer) RecordLog(logEntry model.LogEntry, isMalformed bool) error {
 	if isMalformed {
 		a.malformedEntries++
 		return nil
 	}
-	severity := logEntry.severity
-	service := logEntry.service
+	severity := logEntry.Severity
+	service := logEntry.Service
 	a.countsBySeverityLevels[severity]++
 	a.countsByServices[service]++
 	a.validEntries++
