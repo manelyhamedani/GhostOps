@@ -1,0 +1,11 @@
+{
+    "timeSlice": "2m",
+    "rules": [
+        {
+           "name": "DATABASE_CONNECTION_FAILURE",
+           "severity": ["ERROR", "FATAL"],
+           "threshold": 1,
+           "keywords": ["database", "connection"]
+        }
+    ]
+}
