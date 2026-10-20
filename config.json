@@ -1,5 +1,5 @@
 {
-    "timeSlice": "1m",
+    "timeSlice": "5m",
     "rules": [
         {
             "name": "FATAL_EVENT",
@@ -41,7 +41,7 @@
             "name": "APPLICATION_EXCEPTION",
             "severity": ["ERROR", "FATAL"],
             "threshold": 1,
-            "keywords": ["exception", "panic", "crash", "nullpointer"]
+            "keywords": ["exception", "panic", "nullpointer"]
         },
         {
             "name": "HIGH_MEMORY_USAGE",

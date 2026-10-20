@@ -6,8 +6,3 @@ type IncidentRule struct {
 	Threshold int
 	Keywords  []string
 }
-
-type Incidents struct {
-	rules              map[string]IncidentRule
-	incidentStatistics map[string]int
-}

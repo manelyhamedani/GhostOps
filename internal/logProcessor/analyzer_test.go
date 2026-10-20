@@ -4,11 +4,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/manelyhamedani/GhostOps/internal/config"
 	"github.com/manelyhamedani/GhostOps/internal/model"
 )
 
 func TestRecordLog(t *testing.T) {
-	a, err := NewAnalyzer(time.Minute)
+	cfg, err := config.NewConfig("../config/testConfig.json")
+	if err != nil {
+		t.Error(err)
+	}
+	a, err := NewAnalyzer(*cfg)
 	if err != nil {
 		t.Error(err)
 	}

@@ -29,14 +29,14 @@ func NewConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
-	if err := cfg.validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 
 	return &cfg, nil
 }
 
-func (c *Config) validate() error {
+func (c *Config) Validate() error {
 	ts, err := time.ParseDuration(c.TimeSlice)
 	if err != nil {
 		return fmt.Errorf("Invalid time slice: %q, %w", ts, err)

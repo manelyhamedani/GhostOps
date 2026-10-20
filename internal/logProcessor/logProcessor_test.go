@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/manelyhamedani/GhostOps/internal/config"
 	"github.com/manelyhamedani/GhostOps/internal/model"
 )
 
@@ -70,7 +71,12 @@ func TestParseLine(t *testing.T) {
 
 func TestProcessLogs(t *testing.T) {
 	filePath := "test.log"
-	analyzer, err := NewAnalyzer(time.Minute)
+	cfgPath := "../../config.json"
+	cfg, err := config.NewConfig(cfgPath)
+	if err != nil {
+		t.Error(err)
+	}
+	analyzer, err := NewAnalyzer(*cfg)
 	if err != nil {
 		t.Error(err)
 	}
@@ -80,18 +86,64 @@ func TestProcessLogs(t *testing.T) {
 		t.Error(err)
 	}
 
+	incidents, err := NewIncidents(*cfg)
+	if err != nil {
+		t.Error(err)
+	}
+
+	t1, _ := time.Parse(time.RFC3339, "2026-10-01T00:25:00Z")
+	t2, _ := time.Parse(time.RFC3339, "2026-10-02T12:15:00Z")
+	t3, _ := time.Parse(time.RFC3339, "2026-10-02T12:20:00Z")
+
 	want := Analyzer{
-		validEntries:     2,
+		validEntries:     7,
 		malformedEntries: 1,
 		countsBySeverityLevels: map[model.SeverityLevel]int{
-			model.INFO:  1,
+			model.INFO:  3,
 			model.FATAL: 1,
+			model.ERROR: 1,
+			model.WARN:  2,
 		},
 		countsByServices: map[string]int{
-			"payment-service": 1,
-			"user-service":    1,
+			"payment-service":      2,
+			"user-service":         1,
+			"order-service":        2,
+			"notification-service": 1,
+			"auth-service":         1,
 		},
-		timeSlices: time.Minute,
+		timeSlices: 5 * time.Minute,
+		incidents:  *incidents,
+		serviceAnalytics: map[string]map[time.Time]map[string]int{
+			"payment-service": {
+				t1: map[string]int{},
+				t2: map[string]int{
+					"WARNING_SPIKE":        1,
+					"DEPRECATED_API_USAGE": 1,
+				},
+			},
+			"user-service": {
+				t3: map[string]int{
+					"FATAL_EVENT":                 1,
+					"DATABASE_CONNECTION_FAILURE": 1,
+				},
+			},
+			"order-service": {
+				t3: map[string]int{
+					"ERROR_SPIKE": 1,
+					"SQL_ERROR":   1,
+				},
+				t2: map[string]int{
+					"WARNING_SPIKE":     1,
+					"HIGH_MEMORY_USAGE": 1,
+				},
+			},
+			"notification-service": {
+				t2: map[string]int{},
+			},
+			"auth-service": {
+				t2: map[string]int{},
+			},
+		},
 	}
 
 	got := *analyzer
