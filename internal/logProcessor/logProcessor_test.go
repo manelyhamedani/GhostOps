@@ -86,7 +86,7 @@ func TestProcessLogs(t *testing.T) {
 		t.Error(err)
 	}
 
-	incidents, err := NewIncidents(*cfg)
+	incidents, err := model.NewIncidents((*cfg).Rules)
 	if err != nil {
 		t.Error(err)
 	}
@@ -96,52 +96,54 @@ func TestProcessLogs(t *testing.T) {
 	t3, _ := time.Parse(time.RFC3339, "2026-10-02T12:20:00Z")
 
 	want := Analyzer{
-		validEntries:     7,
-		malformedEntries: 1,
-		countsBySeverityLevels: map[model.SeverityLevel]int{
-			model.INFO:  3,
-			model.FATAL: 1,
-			model.ERROR: 1,
-			model.WARN:  2,
-		},
-		countsByServices: map[string]int{
-			"payment-service":      2,
-			"user-service":         1,
-			"order-service":        2,
-			"notification-service": 1,
-			"auth-service":         1,
-		},
-		timeSlice: 5 * time.Minute,
-		incidents: *incidents,
-		serviceAnalytics: map[string]map[time.Time]map[string]int{
-			"payment-service": {
-				t1: map[string]int{},
-				t2: map[string]int{
-					"WARNING_SPIKE":        1,
-					"DEPRECATED_API_USAGE": 1,
-				},
+		analytics: model.Analytics{
+			ValidEntries:     7,
+			MalformedEntries: 1,
+			CountsBySeverityLevels: map[model.SeverityLevel]int{
+				model.INFO:  3,
+				model.FATAL: 1,
+				model.ERROR: 1,
+				model.WARN:  2,
 			},
-			"user-service": {
-				t3: map[string]int{
-					"FATAL_EVENT":                 1,
-					"DATABASE_CONNECTION_FAILURE": 1,
-				},
+			CountsByServices: map[string]int{
+				"payment-service":      2,
+				"user-service":         1,
+				"order-service":        2,
+				"notification-service": 1,
+				"auth-service":         1,
 			},
-			"order-service": {
-				t3: map[string]int{
-					"ERROR_SPIKE": 1,
-					"SQL_ERROR":   1,
+			TimeSlice: 5 * time.Minute,
+			Incidents: *incidents,
+			ServiceAnalytics: model.ServiceToTimeSlice{
+				"payment-service": {
+					t1: map[string]int{},
+					t2: map[string]int{
+						"WARNING_SPIKE":        1,
+						"DEPRECATED_API_USAGE": 1,
+					},
 				},
-				t2: map[string]int{
-					"WARNING_SPIKE":     1,
-					"HIGH_MEMORY_USAGE": 1,
+				"user-service": {
+					t3: map[string]int{
+						"FATAL_EVENT":                 1,
+						"DATABASE_CONNECTION_FAILURE": 1,
+					},
 				},
-			},
-			"notification-service": {
-				t2: map[string]int{},
-			},
-			"auth-service": {
-				t2: map[string]int{},
+				"order-service": {
+					t3: map[string]int{
+						"ERROR_SPIKE": 1,
+						"SQL_ERROR":   1,
+					},
+					t2: map[string]int{
+						"WARNING_SPIKE":     1,
+						"HIGH_MEMORY_USAGE": 1,
+					},
+				},
+				"notification-service": {
+					t2: map[string]int{},
+				},
+				"auth-service": {
+					t2: map[string]int{},
+				},
 			},
 		},
 	}

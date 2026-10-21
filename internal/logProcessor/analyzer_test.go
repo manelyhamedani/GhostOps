@@ -32,16 +32,16 @@ func TestRecordLog(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if a.malformedEntries != 0 {
+	if a.analytics.MalformedEntries != 0 {
 		t.Errorf("malformed")
 	}
-	if a.validEntries != 1 {
+	if a.analytics.ValidEntries != 1 {
 		t.Errorf("valid")
 	}
-	if a.countsByServices["payment-service"] != 1 {
+	if a.analytics.CountsByServices["payment-service"] != 1 {
 		t.Errorf("service")
 	}
-	if a.countsBySeverityLevels[model.INFO] != 1 {
+	if a.analytics.CountsBySeverityLevels[model.INFO] != 1 {
 		t.Errorf("severity")
 	}
 }

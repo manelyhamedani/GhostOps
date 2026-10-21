@@ -14,13 +14,7 @@ import (
 )
 
 type Analyzer struct {
-	validEntries           int
-	malformedEntries       int
-	countsBySeverityLevels map[model.SeverityLevel]int
-	countsByServices       map[string]int
-	timeSlice              time.Duration
-	incidents              Incidents
-	serviceAnalytics       map[string]map[time.Time]map[string]int
+	analytics model.Analytics
 }
 
 func NewAnalyzer(cfg config.Config) (*Analyzer, error) {
@@ -32,17 +26,19 @@ func NewAnalyzer(cfg config.Config) (*Analyzer, error) {
 		return nil, err
 	}
 
-	Incidents, err := NewIncidents(cfg)
+	Incidents, err := model.NewIncidents(cfg.Rules)
 	if err != nil {
 		return nil, err
 	}
 
 	a := &Analyzer{
-		countsBySeverityLevels: make(map[model.SeverityLevel]int),
-		countsByServices:       make(map[string]int),
-		timeSlice:              ts,
-		incidents:              *Incidents,
-		serviceAnalytics:       make(map[string]map[time.Time]map[string]int),
+		analytics: model.Analytics{
+			CountsBySeverityLevels: make(map[model.SeverityLevel]int),
+			CountsByServices:       make(map[string]int),
+			TimeSlice:              ts,
+			Incidents:              *Incidents,
+			ServiceAnalytics:       make(model.ServiceToTimeSlice),
+		},
 	}
 
 	return a, nil
@@ -50,22 +46,22 @@ func NewAnalyzer(cfg config.Config) (*Analyzer, error) {
 
 func (a *Analyzer) RecordLog(logEntry model.LogEntry, isMalformed bool) error {
 	if isMalformed {
-		a.malformedEntries++
+		a.analytics.MalformedEntries++
 		return nil
 	}
 	severity := logEntry.Severity
 	service := logEntry.Service
-	a.countsBySeverityLevels[severity]++
-	a.countsByServices[service]++
-	a.validEntries++
+	a.analytics.CountsBySeverityLevels[severity]++
+	a.analytics.CountsByServices[service]++
+	a.analytics.ValidEntries++
 
-	sa, ok := a.serviceAnalytics[service]
+	sa, ok := a.analytics.ServiceAnalytics[service]
 	if !ok {
-		sa = make(map[time.Time]map[string]int)
-		a.serviceAnalytics[service] = sa
+		sa = make(model.TimeSliceToIncident)
+		a.analytics.ServiceAnalytics[service] = sa
 	}
 
-	startTime := logEntry.Timestamp.UTC().Truncate(a.timeSlice)
+	startTime := logEntry.Timestamp.UTC().Truncate(a.analytics.TimeSlice)
 	ts, ok := sa[startTime]
 	if !ok {
 		ts = make(map[string]int)
@@ -73,7 +69,7 @@ func (a *Analyzer) RecordLog(logEntry model.LogEntry, isMalformed bool) error {
 	}
 
 	//TODO: Refactor naming
-	err := a.incidents.MatchRules(logEntry, ts)
+	err := a.analytics.Incidents.MatchRules(logEntry, ts)
 	if err != nil {
 		return err
 	}
@@ -85,27 +81,27 @@ func (a *Analyzer) ReportText(w io.Writer) error {
 	tw := tabwriter.NewWriter(w, 0, 4, 2, ' ', 0)
 
 	fmt.Fprintf(tw, "SUMMARY\n=======\n")
-	fmt.Fprintf(tw, "Valid entries:\t%d\n", a.validEntries)
-	fmt.Fprintf(tw, "Malformed entries:\t%d\n", a.malformedEntries)
-	fmt.Fprintf(tw, "Time slice:\t%s\n", a.timeSlice)
+	fmt.Fprintf(tw, "Valid entries:\t%d\n", a.analytics.ValidEntries)
+	fmt.Fprintf(tw, "Malformed entries:\t%d\n", a.analytics.MalformedEntries)
+	fmt.Fprintf(tw, "Time slice:\t%s\n", a.analytics.TimeSlice)
 
 	fmt.Fprintf(tw, "BY SEVERITY\n-----------\n")
-	sevKeys := slices.Sorted(maps.Keys(a.countsBySeverityLevels))
+	sevKeys := slices.Sorted(maps.Keys(a.analytics.CountsBySeverityLevels))
 	for _, sk := range sevKeys {
-		fmt.Fprintf(tw, "%s\t%d\n", sk, a.countsBySeverityLevels[sk])
+		fmt.Fprintf(tw, "%s\t%d\n", sk, a.analytics.CountsBySeverityLevels[sk])
 	}
 
 	fmt.Fprintf(tw, "BY SERVICE\n----------\n")
-	svcKeys := slices.Sorted(maps.Keys(a.countsByServices))
+	svcKeys := slices.Sorted(maps.Keys(a.analytics.CountsByServices))
 	for _, sk := range svcKeys {
-		fmt.Fprintf(tw, "%s\t%d\n", sk, a.countsByServices[sk])
+		fmt.Fprintf(tw, "%s\t%d\n", sk, a.analytics.CountsByServices[sk])
 	}
 
 	fmt.Fprintf(tw, "INCIDENTS\n---------\n")
-	for svc, ts := range a.serviceAnalytics {
+	for svc, ts := range a.analytics.ServiceAnalytics {
 		for start, inc := range ts {
 			for incName, freq := range inc {
-				rule, ok := a.incidents.rules[incName]
+				rule, ok := a.analytics.Incidents.Rules[incName]
 				if !ok {
 					continue
 				}
@@ -118,7 +114,7 @@ func (a *Analyzer) ReportText(w io.Writer) error {
 					incName,
 					svc,
 					start.Format(time.RFC3339),
-					start.Add(a.timeSlice).Format(time.RFC3339),
+					start.Add(a.analytics.TimeSlice).Format(time.RFC3339),
 					freq,
 					rule.Threshold,
 				)
@@ -152,19 +148,19 @@ type jsonReport struct {
 func (a *Analyzer) ReportJSON(w io.Writer) error {
 	var jr jsonReport
 
-	jr.Summary.ValidEntries = a.validEntries
-	jr.Summary.MalformedEntries = a.malformedEntries
-	jr.Summary.TimeSlice = a.timeSlice.String()
-	jr.Summary.CountsByServices = a.countsByServices
-	jr.Summary.CountsBySeverity = make(map[string]int, len(a.countsBySeverityLevels))
-	for sev, n := range a.countsBySeverityLevels {
+	jr.Summary.ValidEntries = a.analytics.ValidEntries
+	jr.Summary.MalformedEntries = a.analytics.MalformedEntries
+	jr.Summary.TimeSlice = a.analytics.TimeSlice.String()
+	jr.Summary.CountsByServices = a.analytics.CountsByServices
+	jr.Summary.CountsBySeverity = make(map[string]int, len(a.analytics.CountsBySeverityLevels))
+	for sev, n := range a.analytics.CountsBySeverityLevels {
 		jr.Summary.CountsBySeverity[sev.String()] = n
 	}
 
-	for svc, ts := range a.serviceAnalytics {
+	for svc, ts := range a.analytics.ServiceAnalytics {
 		for start, inc := range ts {
 			for incName, freq := range inc {
-				rule, ok := a.incidents.rules[incName]
+				rule, ok := a.analytics.Incidents.Rules[incName]
 				if !ok {
 					continue
 				}
@@ -177,7 +173,7 @@ func (a *Analyzer) ReportJSON(w io.Writer) error {
 					Incident:  incName,
 					Service:   svc,
 					StartTime: start.Format(time.RFC3339),
-					EndTime:   start.Add(a.timeSlice).Format(time.RFC3339),
+					EndTime:   start.Add(a.analytics.TimeSlice).Format(time.RFC3339),
 					Frequency: freq,
 					Threshold: rule.Threshold,
 				})
