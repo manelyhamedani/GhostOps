@@ -22,6 +22,17 @@ var SeverityLevelsByName = map[string]SeverityLevel{
 	"FATAL": FATAL,
 }
 
+var NameOfSeverityLevels = map[SeverityLevel]string{
+	INFO:  "INFO",
+	WARN:  "WARN",
+	ERROR: "ERROR",
+	FATAL: "FATAL",
+}
+
+func (sl SeverityLevel) String() string {
+	return NameOfSeverityLevels[sl]
+}
+
 // TODO: Add constructor
 type LogEntry struct {
 	Timestamp time.Time

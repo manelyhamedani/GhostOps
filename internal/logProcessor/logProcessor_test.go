@@ -111,8 +111,8 @@ func TestProcessLogs(t *testing.T) {
 			"notification-service": 1,
 			"auth-service":         1,
 		},
-		timeSlices: 5 * time.Minute,
-		incidents:  *incidents,
+		timeSlice: 5 * time.Minute,
+		incidents: *incidents,
 		serviceAnalytics: map[string]map[time.Time]map[string]int{
 			"payment-service": {
 				t1: map[string]int{},
