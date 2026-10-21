@@ -19,10 +19,11 @@ func TestNewConfig(t *testing.T) {
 		TimeSlice: "2m",
 		Rules: []model.IncidentRule{
 			{
-				Name:      "DATABASE_CONNECTION_FAILURE",
-				Severity:  []model.SeverityLevel{model.ERROR, model.FATAL},
-				Threshold: 1,
-				Keywords:  []string{"database", "connection"},
+				Name:             "DATABASE_CONNECTION_FAILURE",
+				Severity:         []model.SeverityLevel{model.ERROR, model.FATAL},
+				Threshold:        1,
+				Keywords:         []string{"database", "connection"},
+				IncidentSeverity: model.HIGH,
 			},
 		},
 	}

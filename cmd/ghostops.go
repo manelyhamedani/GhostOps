@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/manelyhamedani/GhostOps/internal/config"
 	logprocessor "github.com/manelyhamedani/GhostOps/internal/logProcessor"
@@ -82,8 +85,12 @@ func run() error {
 	pipe.Close()
 	waitErr := pager.Wait()
 
+	if errors.Is(reportErr, syscall.EPIPE) || errors.Is(reportErr, io.ErrClosedPipe) {
+		reportErr = nil
+	}
+
 	if reportErr != nil {
-		return fmt.Errorf("Report text: %w", err)
+		return fmt.Errorf("Report text: %w", reportErr)
 	}
 
 	return waitErr

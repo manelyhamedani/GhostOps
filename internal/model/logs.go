@@ -33,7 +33,6 @@ func (sl SeverityLevel) String() string {
 	return NameOfSeverityLevels[sl]
 }
 
-// TODO: Add constructor
 type LogEntry struct {
 	Timestamp time.Time
 	Severity  SeverityLevel

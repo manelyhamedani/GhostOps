@@ -5,7 +5,8 @@
            "name": "DATABASE_CONNECTION_FAILURE",
            "severity": ["ERROR", "FATAL"],
            "threshold": 1,
-           "keywords": ["database", "connection"]
+           "keywords": ["database", "connection"],
+           "incidentSeverity": "HIGH"
         }
     ]
 }

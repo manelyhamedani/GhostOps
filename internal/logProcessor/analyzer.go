@@ -62,14 +62,13 @@ func (a *Analyzer) RecordLog(logEntry model.LogEntry, isMalformed bool) error {
 	}
 
 	startTime := logEntry.Timestamp.UTC().Truncate(a.analytics.TimeSlice)
-	ts, ok := sa[startTime]
+	tsBucket, ok := sa[startTime]
 	if !ok {
-		ts = make(map[string]int)
-		sa[startTime] = ts
+		tsBucket = make(map[string]int)
+		sa[startTime] = tsBucket
 	}
 
-	//TODO: Refactor naming
-	err := a.analytics.Incidents.MatchRules(logEntry, ts)
+	err := a.analytics.Incidents.MatchRules(logEntry, tsBucket)
 	if err != nil {
 		return err
 	}
@@ -110,8 +109,9 @@ func (a *Analyzer) ReportText(w io.Writer) error {
 					continue
 				}
 
-				fmt.Fprintf(tw, "%s:\n- Affected service: %s\n- Time range: %s -> %s\n- Frequency: %d (Threshold = %d)\n\n",
+				fmt.Fprintf(tw, "%s:\n- Incident severity: %s\n- Affected service: %s\n- Time range: %s -> %s\n- Frequency: %d (Threshold = %d)\n\n",
 					incName,
+					rule.IncidentSeverity.String(),
 					svc,
 					start.Format(time.RFC3339),
 					start.Add(a.analytics.TimeSlice).Format(time.RFC3339),
@@ -126,12 +126,13 @@ func (a *Analyzer) ReportText(w io.Writer) error {
 }
 
 type jsonIncident struct {
-	Incident  string
-	Service   string
-	StartTime string
-	EndTime   string
-	Frequency int
-	Threshold int
+	Incident         string
+	IncidentSeverity string
+	Service          string
+	StartTime        string
+	EndTime          string
+	Frequency        int
+	Threshold        int
 }
 
 type jsonReport struct {
@@ -170,12 +171,13 @@ func (a *Analyzer) ReportJSON(w io.Writer) error {
 				}
 
 				jr.Incidents = append(jr.Incidents, jsonIncident{
-					Incident:  incName,
-					Service:   svc,
-					StartTime: start.Format(time.RFC3339),
-					EndTime:   start.Add(a.analytics.TimeSlice).Format(time.RFC3339),
-					Frequency: freq,
-					Threshold: rule.Threshold,
+					Incident:         incName,
+					IncidentSeverity: rule.IncidentSeverity.String(),
+					Service:          svc,
+					StartTime:        start.Format(time.RFC3339),
+					EndTime:          start.Add(a.analytics.TimeSlice).Format(time.RFC3339),
+					Frequency:        freq,
+					Threshold:        rule.Threshold,
 				})
 			}
 		}
