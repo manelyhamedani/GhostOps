@@ -39,7 +39,7 @@ func run() error {
 	flag.Parse()
 
 	if flag.NArg() != 1 {
-		return fmt.Errorf("Expected at one logfile, got %d", flag.NArg())
+		return fmt.Errorf("Expected one logfile, got %d", flag.NArg())
 	}
 
 	logPath := flag.Arg(0)
@@ -78,7 +78,9 @@ func run() error {
 		return fmt.Errorf("Pager stding: %w", err)
 	}
 	if err = pager.Start(); err != nil {
-		return fmt.Errorf("Start pager: %w", err)
+		// less is unavailable or could not be started
+		fmt.Fprintln(os.Stderr, "Warning: could not start less; printing report directly.")
+		return analyzer.ReportText(os.Stdout)
 	}
 
 	reportErr := analyzer.ReportText(pipe)
